@@ -25,9 +25,7 @@
               {% set bstudents = [] %}
               {% for c in b.companies %}{% for p in c.platoons %}{% set _ = bstudents.append(p.student_count) %}{% endfor %}{% endfor %}
               {% set btotal = bstudents | sum %}
-              <span class="count-badge {{ 'in-range' if STUDENT_COUNT_MIN <= btotal <= STUDENT_COUNT_MAX else 'out-range' }}">
-                {{ '⚠' if not (STUDENT_COUNT_MIN <= btotal <= STUDENT_COUNT_MAX) }}{{ btotal }}
-              </span>
+              <span class="count-badge badge-navy">{{ btotal }}</span>
               <span class="tree-meta">{{ b.companies | length }} سرية</span>
             </div>
 
@@ -42,9 +40,7 @@
                   </button>
                   <span class="tree-icon company"><svg><use href="#icon-users" xlink:href="#icon-users"/></svg></span>
                   <span class="tree-label">{{ c.row.name }}</span>
-                  <span class="count-badge {{ 'in-range' if STUDENT_COUNT_MIN <= ctotal <= STUDENT_COUNT_MAX else 'out-range' }}">
-                    {{ '⚠' if not (STUDENT_COUNT_MIN <= ctotal <= STUDENT_COUNT_MAX) }}{{ ctotal }}
-                  </span>
+                  <span class="count-badge badge-navy">{{ ctotal }}</span>
                   <span class="tree-meta">{{ c.platoons | length }} فصيل</span>
                 </div>
 
@@ -93,9 +89,6 @@
 
       <div class="action-panel-divider"></div>
 
-      <a class="btn btn-blue btn-block" id="btnViewStudents" href="#" style="pointer-events:none; opacity:.6;">
-        <svg><use href="#icon-eye" xlink:href="#icon-eye"/></svg> عرض/إدارة الطلاب
-      </a>
       <button type="button" class="btn btn-blue btn-block" data-modal-open="dlgAddStudent">
         <svg><use href="#icon-user-plus" xlink:href="#icon-user-plus"/></svg> إضافة طالب يدويًا
       </button>
@@ -109,7 +102,10 @@
       <div class="action-panel-divider"></div>
 
       <a class="btn btn-gold btn-block" id="btnExportSelected" href="#" style="pointer-events:none; opacity:.6;">
-        <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير المحدد
+        <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير Excel
+      </a>
+      <a class="btn btn-outline btn-block" id="btnPrintSelected" href="#" target="_blank" style="pointer-events:none; opacity:.6;">
+        <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg> طباعة PDF
       </a>
       <a class="btn btn-gold btn-block" href="{{ url_for('exports.export_full') }}">
         <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير الكل

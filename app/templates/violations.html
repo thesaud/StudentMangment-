@@ -15,7 +15,10 @@
               <svg><use href="#icon-plus" xlink:href="#icon-plus"/></svg> تسجيل مخالفة جديدة
             </button>
             <a class="btn btn-gold btn-sm" href="{{ url_for('exports.export_violations') }}">
-              <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير
+              <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير Excel
+            </a>
+            <a class="btn btn-ghost-on-navy btn-sm" href="{{ url_for('exports.print_violations') }}" target="_blank">
+              <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg> طباعة PDF
             </a>
           </div>
         </div>

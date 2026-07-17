@@ -87,7 +87,10 @@
 
       <div class="detail-bottom-bar">
         <a class="btn btn-gold" href="{{ url_for('exports.export_queue', queue_id=q.id) }}">
-          <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> طباعة/تصدير الكشف بالتاريخ
+          <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير Excel
+        </a>
+        <a class="btn btn-outline" href="{{ url_for('exports.print_queue', queue_id=q.id) }}" target="_blank">
+          <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg> طباعة PDF
         </a>
       </div>
       {% else %}

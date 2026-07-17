@@ -195,3 +195,55 @@ def print_inquiry(student_id):
         f"تقرير استعلام: {ex._get(student_info, 'sname')}",
         sections=sections, info_fields=info_fields,
     )
+
+
+@bp.route("/print/violations")
+def print_violations():
+    violations = db.get_all_violations()
+    headers = ["#", "اسم الطالب", "رقم الهوية", "رقم الطالب",
+               "الكتيبة", "السرية", "الفصيل",
+               "نوع المخالفة", "المدة", "التاريخ", "ملاحظات"]
+    rows = []
+    for i, v in enumerate(violations, start=1):
+        rows.append([
+            i, ex._safe(ex._get(v, "sname")), ex._safe(ex._get(v, "national_id")),
+            ex._student_number(v),
+            ex._safe(ex._get(v, "bname")), ex._safe(ex._get(v, "cname")), ex._safe(ex._get(v, "pname")),
+            ex._safe(ex._get(v, "violation_type")), ex._safe(ex._get(v, "duration")),
+            ex._safe(ex._get(v, "date_added")), ex._safe(ex._get(v, "notes")),
+        ])
+    return ex.render_print_page("سجل المخالفات", [{
+        "title": "سجل المخالفات",
+        "headers": headers,
+        "rows": rows,
+        "empty_msg": "لا توجد مخالفات مسجّلة",
+    }])
+
+
+@bp.route("/print/queue/<int:queue_id>")
+def print_queue(queue_id):
+    q = next((row for row in db.get_queues() if row["id"] == queue_id), None)
+    if not q:
+        flash("الطابور غير موجود", "error")
+        return redirect(url_for("queues.queues"))
+    members = db.get_queue_students(queue_id)
+    headers = ["#", "اسم الطالب", "رقم الهوية", "رقم الطالب",
+               "الكتيبة", "السرية", "الفصيل",
+               "نوع المخالفة", "مدة المخالفة", "الحالة"]
+    rows = []
+    for i, m in enumerate(members, start=1):
+        duration_label = db.format_duration_label(ex._get(m, "q_duration_category"), ex._get(m, "q_duration_days"))
+        remaining_label = db.compute_remaining_label(ex._get(m, "q_expires_at"), ex._get(m, "q_duration_category"))
+        rows.append([
+            i, ex._safe(ex._get(m, "sname")), ex._safe(ex._get(m, "national_id")),
+            ex._student_number(m),
+            ex._safe(ex._get(m, "bname")), ex._safe(ex._get(m, "cname")), ex._safe(ex._get(m, "pname")),
+            ex._safe(ex._get(m, "q_violation_type")),
+            duration_label, remaining_label,
+        ])
+    return ex.render_print_page(f"كشف طابور: {q['name']}", [{
+        "title": f"طابور: {q['name']} — {q['queue_date']}",
+        "headers": headers,
+        "rows": rows,
+        "empty_msg": "لا يوجد طلاب في هذا الطابور",
+    }])

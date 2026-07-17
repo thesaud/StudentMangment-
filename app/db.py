@@ -563,20 +563,23 @@ def create_structure_and_distribute_custom(
                     )
                     platoon_ids.append(cur.lastrowid)
 
+        # إدراج الطلاب دفعة واحدة (executemany) بدل إدراج فردي في حلقة
+        student_params = []
         for i, r in enumerate(rows):
             p_id = platoon_ids[i % len(platoon_ids)]
-            cur.execute(
-                "INSERT INTO students (platoon_id, name, national_id, phone, notes, student_number)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    p_id,
-                    (r.get("name") or "").strip(),
-                    (r.get("national_id") or "").strip(),
-                    (r.get("phone") or "").strip(),
-                    (r.get("notes") or "").strip(),
-                    i + 1,  # الرقم التسلسلي: متصل وفريد يبدأ من 1
-                ),
-            )
+            student_params.append((
+                p_id,
+                (r.get("name") or "").strip(),
+                (r.get("national_id") or "").strip(),
+                (r.get("phone") or "").strip(),
+                (r.get("notes") or "").strip(),
+                i + 1,
+            ))
+        cur.executemany(
+            "INSERT INTO students (platoon_id, name, national_id, phone, notes, student_number)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            student_params,
+        )
 
         conn.commit()
     except Exception:
