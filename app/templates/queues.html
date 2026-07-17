@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% from "_page_header.html" import page_header %}
+{% block title %}الطوابير الإضافية{% endblock %}
+{% block body %}
+<div class="page-shell">
+  {{ page_header('الطوابير الإضافية') }}
+
+  <div class="master-detail">
+    <div class="master-pane w-280">
+      <div class="master-pane-toolbar">
+        <button type="button" class="btn btn-navy flex-1" data-modal-open="dlgNewRoll">
+          <svg><use href="#icon-plus" xlink:href="#icon-plus"/></svg> طابور جديد
+        </button>
+        {% if q %}
+        <form method="POST" action="{{ url_for('queues.delete_queue', queue_id=q.id) }}"
+              data-confirm="سيتم حذف طابور «{{ q.name }}» وكل بياناته." data-confirm-label="حذف الطابور">
+          <button type="submit" class="btn btn-red btn-icon" title="حذف الطابور المحدد"><svg><use href="#icon-trash" xlink:href="#icon-trash"/></svg></button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-outline btn-icon" disabled title="اختر طابوراً أولاً"><svg><use href="#icon-trash" xlink:href="#icon-trash"/></svg></button>
+        {% endif %}
+      </div>
+      <div class="master-list">
+        {% for item in queues %}
+        <a class="master-list-item {{ 'is-active' if q and q.id == item.id }}" href="{{ url_for('queues.queue_detail', queue_id=item.id) }}">
+          <div class="name">{{ item.name }}</div>
+          <div class="meta">{{ item.queue_date }} — {{ queue_counts.get(item.id, 0) }} طالب</div>
+        </a>
+        {% else %}
+        <div class="table-empty" style="padding:24px 12px;">لا توجد طوابير مسجّلة</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="detail-pane">
+      {% if q %}
+      <div class="detail-toolbar">
+        <div>
+          <div class="heading">{{ q.name }}</div>
+          <div class="sub">التاريخ: {{ q.queue_date }}{% if q.notes %} · {{ q.notes }}{% endif %}</div>
+        </div>
+        <button type="button" class="btn btn-navy" data-modal-open="dlgAddToQueue">
+          <svg><use href="#icon-plus" xlink:href="#icon-plus"/></svg> إضافة طالب
+        </button>
+      </div>
+
+      <div class="page-body-scroll">
+        <div class="table-wrap">
+          <table class="data-table thead-navy" style="min-width:900px;">
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th><th>اسم الطالب</th><th>رقم الهوية</th><th>رقم الطالب</th>
+                <th>الكتيبة</th><th>السرية</th><th>الفصيل</th>
+                <th>نوع المخالفة</th><th>مدة المخالفة</th><th>الحالة</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in members %}
+              <tr>
+                <td class="col-index">{{ loop.index }}</td>
+                <td style="font-weight:600;">{{ m.sname }}</td>
+                <td class="col-mono">{{ m.national_id or '—' }}</td>
+                <td class="col-mono" style="font-weight:700; color:var(--navy);">{{ m.student_number or '—' }}</td>
+                <td class="col-muted">{{ m.bname }}</td>
+                <td class="col-muted">{{ m.cname }}</td>
+                <td class="col-muted">{{ m.pname }}</td>
+                <td><span class="badge badge-red">{{ m.q_violation_type or '—' }}</span></td>
+                <td class="col-muted">{{ format_duration_label(m.q_duration_category, m.q_duration_days) }}</td>
+                <td>
+                  {% set rlabel = compute_remaining_label(m.q_expires_at, m.q_duration_category) %}
+                  <span class="badge {{ 'badge-navy' if rlabel == 'للأمر الأخير' else ('badge-red' if 'منتهية' in rlabel else 'badge-green') }}">{{ rlabel }}</span>
+                </td>
+                <td>
+                  <form method="POST" action="{{ url_for('queues.queue_remove_student', queue_id=q.id, student_id=m.sid) }}"
+                        data-confirm="سيتم إزالة «{{ m.sname }}» من هذا الطابور." data-confirm-label="إزالة">
+                    <button type="submit" class="btn btn-outline btn-icon" title="إزالة من الطابور"><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="11" class="table-empty">لا يوجد طلاب في هذا الطابور</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="detail-bottom-bar">
+        <a class="btn btn-gold" href="{{ url_for('exports.export_queue', queue_id=q.id) }}">
+          <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> طباعة/تصدير الكشف بالتاريخ
+        </a>
+      </div>
+      {% else %}
+      <div class="empty-pane">
+        <div>
+          <div class="icon"><svg><use href="#icon-list" xlink:href="#icon-list"/></svg></div>
+          <div class="title">اختر طابورًا من القائمة</div>
+          <div class="sub">أو أنشئ طابورًا جديدًا من الزر أعلى القائمة</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dlgNewRoll">
+  <div class="modal-box">
+    <div class="modal-title">طابور جديد<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('queues.add_queue') }}" class="gap-form">
+      <div class="field">
+        <label class="field-label">اسم الطابور</label>
+        <input class="field-input" type="text" name="name" placeholder="مثال: طابور الصباح - الأسبوع الثاني" required autofocus>
+      </div>
+      <div class="field">
+        <label class="field-label">التاريخ</label>
+        <input class="field-input ltr" type="date" name="queue_date" value="{{ now.strftime('%Y-%m-%d') if now else '' }}">
+      </div>
+      <div class="field">
+        <label class="field-label">ملاحظات</label>
+        <textarea class="field-textarea" name="notes" placeholder="اختياري"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">إنشاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if q %}
+<div class="modal-overlay" id="dlgAddToQueue">
+  <div class="modal-box w-md">
+    <div class="modal-title">إضافة طالب للطابور<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('queues.queue_add_student', queue_id=q.id) }}" class="gap-form">
+      <div class="field combo-wrap" id="studentCombo">
+        <label class="field-label">الطالب</label>
+        <input type="text" class="field-input" data-combo-input placeholder="ابحث بالاسم أو رقم الهوية..." autocomplete="off" required>
+        <input type="hidden" name="student_id" data-combo-value required>
+        <div class="combo-results" data-combo-results></div>
+      </div>
+      <div class="field">
+        <label class="field-label">نوع المخالفة</label>
+        <input type="text" name="violation_type" class="field-input" list="violationTypesList" required placeholder="مثال: تأخر عن الطابور">
+        <datalist id="violationTypesList">
+          {% for v in catalog %}<option value="{{ v.violation_type }}">{% endfor %}
+        </datalist>
+      </div>
+      <div class="field">
+        <label class="field-label">فئة المدة</label>
+        <select name="duration_category" class="field-select" id="durationCategorySelect" required>
+          {% for key, label, mn, mx in duration_categories %}
+            <option value="{{ key }}" data-min="{{ mn or '' }}" data-max="{{ mx or '' }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field" id="durationDaysField">
+        <label class="field-label">عدد الأيام</label>
+        <input type="number" name="duration_days" class="field-input" id="durationDaysInput" min="1">
+        <span class="field-hint" id="durationDaysHint"></span>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">إضافة</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+  window.__ALL_STUDENTS__ = {{ all_students_json|safe }};
+</script>
+<script src="{{ url_for('static', filename='js/queue_violation_shared.js') }}"></script>
+{% endblock %}

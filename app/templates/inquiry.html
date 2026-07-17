@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% from "_page_header.html" import page_header %}
+{% block title %}الاستعلام عن طالب{% endblock %}
+{% block body %}
+<div class="page-shell">
+  {{ page_header('الاستعلام عن طالب') }}
+
+  <div class="master-detail">
+    <div class="master-pane w-360">
+      <div class="master-pane-toolbar">
+        <div class="search-input-wrap flex-1">
+          <svg><use href="#icon-search" xlink:href="#icon-search"/></svg>
+          <input type="text" class="field-input" id="inquirySearch" placeholder="بحث بالاسم أو رقم الهوية أو رقم الطالب..." autocomplete="off">
+        </div>
+      </div>
+      <div class="table-wrap" style="flex:1;">
+        <table class="data-table thead-navy clickable" id="inquiryResultsTable">
+          <thead><tr><th style="width:32px;">#</th><th>اسم الطالب</th><th>رقم الهوية</th><th>رقم الطالب</th></tr></thead>
+          <tbody>
+            {% for s in students %}
+            <tr class="{{ 'is-selected' if s.sid == selected_id }}" data-row-search="{{ (s.sname or '') ~ ' ' ~ (s.national_id or '') ~ ' ' ~ (s.student_number|string if s.student_number else '') }}"
+                onclick="window.location.href='{{ url_for('inquiry.inquiry', sid=s.sid) }}'">
+              <td class="col-index">{{ loop.index }}</td>
+              <td style="font-weight:600;">{{ s.sname }}</td>
+              <td class="col-mono">{{ s.national_id or '—' }}</td>
+              <td class="col-mono" style="font-weight:700; color:var(--navy);">{{ s.student_number or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="table-empty">لا يوجد طلاب نشطون</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-pane">
+      {% if not selected %}
+      <div class="empty-pane">
+        <div>
+          <div class="icon"><svg><use href="#icon-search" xlink:href="#icon-search"/></svg></div>
+          <div class="title">ابحث عن طالب</div>
+          <div class="sub">اختر طالبًا من نتائج البحث لعرض ملفه الكامل</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="page-body-scroll" style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+        <div class="card">
+          <div class="profile-card-header" style="background:var(--navy);">
+            <div>
+              <div class="name">{{ selected.sname }}</div>
+              <div style="font-size:12px; opacity:.8; margin-top:2px;">{{ selected.bname }} / {{ selected.cname }} / {{ selected.pname }}</div>
+            </div>
+            <div class="profile-avatar">🎓</div>
+          </div>
+          <div class="info-grid">
+            <div class="info-field"><span class="k">الكتيبة</span><span class="v">{{ selected.bname }}</span></div>
+            <div class="info-field"><span class="k">السرية</span><span class="v">{{ selected.cname }}</span></div>
+            <div class="info-field"><span class="k">الفصيل</span><span class="v">{{ selected.pname }}</span></div>
+            <div class="info-field"><span class="k">رقم الطالب</span><span class="v" style="font-weight:700; color:var(--navy);">{{ selected.student_number or '—' }}</span></div>
+            <div class="info-field"><span class="k">رقم الجوال</span><span class="v">{{ selected.phone or '—' }}</span></div>
+            <div class="info-field"><span class="k">رقم الهوية</span><span class="v">{{ selected.national_id or '—' }}</span></div>
+            <div class="info-field">
+              <span class="k">الملاحظات</span>
+              <div class="v-row">
+                <span class="v">{{ selected.notes or '—' }}</span>
+                <button type="button" class="edit-inline" data-modal-open="dlgEditNotes" title="تعديل الملاحظات">
+                  <svg><use href="#icon-edit" xlink:href="#icon-edit"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header-light"><span class="title">المخالفات السابقة ({{ violations | length }})</span></div>
+          {% if violations %}
+          <div class="table-wrap">
+            <table class="data-table thead-light">
+              <thead><tr><th>نوع المخالفة</th><th>المدة</th><th>تاريخ التسجيل</th><th>الحالة</th><th>ملاحظات</th></tr></thead>
+              <tbody>
+                {% for v in violations %}
+                <tr>
+                  <td style="font-weight:600;">{{ v.violation_type }}</td>
+                  <td class="col-muted">{{ v.duration }}</td>
+                  <td class="col-mono">{{ v.date_added }}</td>
+                  <td>
+                    {% set rlabel = remaining_label(v.expires_at) %}
+                    <span class="badge {{ 'badge-navy' if rlabel == 'للأمر الأخير' else ('badge-red' if rlabel == 'منتهية' else 'badge-green') }}">{{ rlabel }}</span>
+                  </td>
+                  <td class="col-muted col-ellipsis">{{ v.notes or '—' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="table-empty" style="padding:16px;">لا توجد مخالفات مسجّلة لهذا الطالب</div>
+          {% endif %}
+        </div>
+
+        <div class="card">
+          <div class="card-header-light"><span class="title">سجل الطوابير الإضافية ({{ queues | length }})</span></div>
+          {% if queues %}
+          <div class="table-wrap">
+            <table class="data-table thead-light">
+              <thead><tr><th>اسم الطابور</th><th>التاريخ</th><th>نوع المخالفة</th><th>المدة</th><th>الحالة</th></tr></thead>
+              <tbody>
+                {% for q in queues %}
+                <tr>
+                  <td style="font-weight:600;">{{ q.qname }}</td>
+                  <td class="col-mono">{{ q.queue_date }}</td>
+                  <td class="col-muted">{{ q.q_violation_type or '—' }}</td>
+                  <td class="col-muted">{{ format_duration_label(q.q_duration_category, q.q_duration_days) }}</td>
+                  <td>
+                    {% if q.q_is_active %}<span class="badge badge-green">نشط حالياً</span>
+                    {% else %}<span class="badge badge-gray">منتهٍ / أُزيل</span>{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="table-empty" style="padding:16px;">لم يُدرج هذا الطالب في أي طابور إضافي</div>
+          {% endif %}
+        </div>
+
+        <div class="flex-row" style="justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+          <a class="btn btn-gold" href="{{ url_for('exports.export_inquiry', student_id=selected_id) }}">
+            <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير Excel
+          </a>
+          <a class="btn btn-outline" href="{{ url_for('exports.print_inquiry', student_id=selected_id) }}" target="_blank">
+            <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg> طباعة PDF
+          </a>
+          <button type="button" class="btn btn-red" data-modal-open="dlgResign">
+            <svg><use href="#icon-log-out" xlink:href="#icon-log-out"/></svg> تسجيل استقالة
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="dlgEditNotes">
+        <div class="modal-box">
+          <div class="modal-title">تعديل الملاحظات<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+          <form method="POST" action="{{ url_for('students.update_student', student_id=selected_id) }}" class="gap-form">
+            <input type="hidden" name="name" value="{{ selected.sname }}">
+            <input type="hidden" name="national_id" value="{{ selected.national_id or '' }}">
+            <input type="hidden" name="phone" value="{{ selected.phone or '' }}">
+            <textarea class="field-textarea" name="notes" placeholder="أدخل الملاحظات...">{{ selected.notes or '' }}</textarea>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+              <button type="submit" class="btn btn-navy">حفظ</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="dlgResign">
+        <div class="modal-box">
+          <div class="modal-title danger">تسجيل استقالة<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+          <p class="modal-subtitle">{{ selected.sname }}</p>
+          <form method="POST" action="{{ url_for('students.resign_student', student_id=selected_id) }}" class="gap-form">
+            <textarea class="field-textarea" name="reason" placeholder="سبب الاستقالة (اختياري)"></textarea>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+              <button type="submit" class="btn btn-red">تسجيل</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+  var q = document.getElementById("inquirySearch");
+  var table = document.getElementById("inquiryResultsTable");
+  if (!q || !table) return;
+  q.addEventListener("input", function () {
+    var v = q.value.trim().toLowerCase();
+    table.querySelectorAll("tbody tr[data-row-search]").forEach(function (row) {
+      var haystack = (row.getAttribute("data-row-search") || "").toLowerCase();
+      row.style.display = !v || haystack.indexOf(v) !== -1 ? "" : "none";
+    });
+  });
+})();
+</script>
+{% endblock %}

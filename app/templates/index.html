@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_shield.html" import shield %}
+{% block title %}اللوحة الرئيسية{% endblock %}
+{% block body %}
+<div class="dashboard-shell">
+  <div class="dashboard-hero">
+    <div class="dashboard-hero-rule"></div>
+    {{ shield(140) }}
+    <div style="text-align:center; padding:0 20px;">
+      <div class="dashboard-hero-title">نظام إدارة الكتائب والطلاب</div>
+      <div class="dashboard-hero-sub">منظومة متكاملة للإدارة التنظيمية والأكاديمية</div>
+    </div>
+    <div class="dashboard-hero-rule"></div>
+    <div class="dashboard-hero-version">الإصدار 2.0 — {{ now.year if now else '' }}</div>
+  </div>
+
+  <div class="dashboard-menu-side">
+    <h2 class="dashboard-menu-heading">القائمة الرئيسية</h2>
+    <div class="menu-list">
+      <a class="menu-card" href="{{ url_for('battalions.battalions') }}">
+        <span class="menu-card-icon"><svg><use href="#icon-sitemap" xlink:href="#icon-sitemap"/></svg></span>
+        <span class="menu-card-text">
+          <span class="menu-card-title">الكتائب</span>
+          <span class="menu-card-desc">إدارة الكتائب / السرايا / الفصائل / الطلاب</span>
+        </span>
+        <span class="menu-card-arrow">‹</span>
+      </a>
+
+      <a class="menu-card" href="{{ url_for('imports.import_page') }}">
+        <span class="menu-card-icon"><svg><use href="#icon-upload-cloud" xlink:href="#icon-upload-cloud"/></svg></span>
+        <span class="menu-card-text">
+          <span class="menu-card-title">الاستيراد والتوزيع التلقائي</span>
+          <span class="menu-card-desc">استيراد الطلاب من Excel وتوزيعهم تلقائياً</span>
+        </span>
+        <span class="menu-card-badge-new">جديد</span>
+        <span class="menu-card-arrow">‹</span>
+      </a>
+
+      <a class="menu-card" href="{{ url_for('queues.queues') }}">
+        <span class="menu-card-icon"><svg><use href="#icon-list" xlink:href="#icon-list"/></svg></span>
+        <span class="menu-card-text">
+          <span class="menu-card-title">الطوابير الإضافية</span>
+          <span class="menu-card-desc">كشوفات أسماء وطباعة بالتاريخ</span>
+        </span>
+        <span class="menu-card-arrow">‹</span>
+      </a>
+
+      <a class="menu-card" href="{{ url_for('violations.violations_page') }}">
+        <span class="menu-card-icon"><svg><use href="#icon-alert-triangle" xlink:href="#icon-alert-triangle"/></svg></span>
+        <span class="menu-card-text">
+          <span class="menu-card-title">المخالفات</span>
+          <span class="menu-card-desc">تسجيل وتعديل مخالفات الطلاب</span>
+        </span>
+        <span class="menu-card-arrow">‹</span>
+      </a>
+
+      <a class="menu-card" href="{{ url_for('reports.reports') }}">
+        <span class="menu-card-icon"><svg><use href="#icon-bar-chart" xlink:href="#icon-bar-chart"/></svg></span>
+        <span class="menu-card-text">
+          <span class="menu-card-title">التقارير والإحصائيات</span>
+          <span class="menu-card-desc">نظرة عامة على البيانات المخزّنة</span>
+        </span>
+        <span class="menu-card-arrow">‹</span>
+      </a>
+
+      <a class="menu-card" href="{{ url_for('inquiry.inquiry') }}">
+        <span class="menu-card-icon"><svg><use href="#icon-search" xlink:href="#icon-search"/></svg></span>
+        <span class="menu-card-text">
+          <span class="menu-card-title">الاستعلام</span>
+          <span class="menu-card-desc">بحث عن طالب وطباعة تقرير شامل عنه</span>
+        </span>
+        <span class="menu-card-arrow">‹</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

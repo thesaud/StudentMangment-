@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "_page_header.html" import page_header %}
+{% block title %}التقارير والإحصائيات{% endblock %}
+{% block body %}
+<div class="page-shell">
+  {{ page_header('التقارير والإحصائيات') }}
+
+  <div class="page-body-scroll" style="padding:20px;">
+    <div class="stat-grid">
+      <div class="stat-card" style="border-top:3px solid #1F4E78;">
+        <div class="icon" style="color:#1F4E78;"><svg style="width:26px;height:26px;"><use href="#icon-building" xlink:href="#icon-building"/></svg></div>
+        <div class="value" style="color:#1F4E78;">{{ total_battalions }}</div>
+        <div class="label">الكتائب</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #2563eb;">
+        <div class="icon" style="color:#2563eb;"><svg style="width:26px;height:26px;"><use href="#icon-users" xlink:href="#icon-users"/></svg></div>
+        <div class="value" style="color:#2563eb;">{{ total_companies }}</div>
+        <div class="label">السرايا</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #7c3aed;">
+        <div class="icon" style="color:#7c3aed;"><svg style="width:26px;height:26px;"><use href="#icon-user-check" xlink:href="#icon-user-check"/></svg></div>
+        <div class="value" style="color:#7c3aed;">{{ total_platoons }}</div>
+        <div class="label">الفصائل</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #059669;">
+        <div class="icon" style="color:#059669;"><svg style="width:26px;height:26px;"><use href="#icon-user-plus" xlink:href="#icon-user-plus"/></svg></div>
+        <div class="value" style="color:#059669;">{{ total_students }}</div>
+        <div class="label">إجمالي الطلاب</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #d97706;">
+        <div class="icon" style="color:#d97706;"><svg style="width:26px;height:26px;"><use href="#icon-alert-triangle" xlink:href="#icon-alert-triangle"/></svg></div>
+        <div class="value" style="color:#d97706;">{{ total_violations }}</div>
+        <div class="label">المخالفات</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #0891b2;">
+        <div class="icon" style="color:#0891b2;"><svg style="width:26px;height:26px;"><use href="#icon-list" xlink:href="#icon-list"/></svg></div>
+        <div class="value" style="color:#0891b2;">{{ total_queues }}</div>
+        <div class="label">الطوابير</div>
+      </div>
+      <div class="stat-card" style="border-top:3px solid #B33A3A;">
+        <div class="icon" style="color:#B33A3A;"><svg style="width:26px;height:26px;"><use href="#icon-log-out" xlink:href="#icon-log-out"/></svg></div>
+        <div class="value" style="color:#B33A3A;">{{ resigned | length }}</div>
+        <div class="label">المستقيلون</div>
+      </div>
+    </div>
+
+    <div style="margin:14px 0 22px;">
+      <a class="btn btn-outline" href="{{ url_for('reports.reports') }}">
+        <svg><use href="#icon-refresh" xlink:href="#icon-refresh"/></svg> تحديث البيانات
+      </a>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header-navy">
+        <span class="title">تصدير مخصّص</span>
+        <span class="sub">اختر النطاق المطلوب تصديره إلى ملف Excel</span>
+      </div>
+      <div class="card-body">
+        <div class="grid-2" id="exportScopeForm">
+          <div class="field">
+            <label class="field-label">نطاق التصدير</label>
+            <select class="field-select" id="exportScopeType">
+              <option value="full">الهيكل التنظيمي الكامل</option>
+              <option value="battalion">كتيبة محددة</option>
+              <option value="company">سرية محددة</option>
+              <option value="platoon">فصيل محدد</option>
+            </select>
+          </div>
+          <div class="field" id="exportBattalionField" style="display:none;">
+            <label class="field-label">الكتيبة</label>
+            <select class="field-select" id="exportBattalionSelect">
+              {% for b in battalions %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field" id="exportCompanyField" style="display:none;">
+            <label class="field-label">السرية</label>
+            <select class="field-select" id="exportCompanySelect"></select>
+          </div>
+          <div class="field" id="exportPlatoonField" style="display:none;">
+            <label class="field-label">الفصيل</label>
+            <select class="field-select" id="exportPlatoonSelect"></select>
+          </div>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start; margin-top:14px; gap:8px;">
+          <a class="btn btn-gold" id="exportScopeBtn" href="{{ url_for('exports.export_full') }}">
+            <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير Excel
+          </a>
+          <a class="btn btn-outline" id="printScopeBtn" href="{{ url_for('exports.print_full') }}" target="_blank">
+            <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg> طباعة PDF
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-navy">
+        <span class="title">الطلاب المستقيلون ({{ resigned | length }})</span>
+        <div class="actions">
+          <a class="btn btn-gold btn-sm" href="{{ url_for('exports.export_resigned') }}">
+            <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> طباعة/تصدير الجدول
+          </a>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table thead-light">
+          <thead>
+            <tr>
+              <th style="width:36px;">#</th><th>اسم الطالب</th><th>رقم الهوية</th><th>رقم الطالب</th>
+              <th>الكتيبة</th><th>السرية</th><th>الفصيل</th>
+              <th>سبب الاستقالة</th><th>تاريخ الاستقالة</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in resigned %}
+            <tr>
+              <td class="col-index">{{ loop.index }}</td>
+              <td style="font-weight:600; color:var(--red);">{{ r.sname }}</td>
+              <td class="col-mono">{{ r.national_id or '—' }}</td>
+              <td class="col-mono" style="font-weight:700; color:var(--navy);">{{ r.student_number or '—' }}</td>
+              <td class="col-muted">{{ r.bname }}</td>
+              <td class="col-muted">{{ r.cname }}</td>
+              <td class="col-muted">{{ r.pname }}</td>
+              <td class="col-muted col-ellipsis">{{ r.resignation_reason or '—' }}</td>
+              <td class="col-mono">{{ r.resignation_date or '—' }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('students.reinstate_student', student_id=r.sid) }}"
+                      data-confirm="التراجع عن استقالة «{{ r.sname }}» وإعادته لوضعه الطبيعي؟" data-confirm-label="التراجع عن الاستقالة">
+                  <button type="submit" class="btn btn-outline btn-icon" title="التراجع عن الاستقالة"><svg><use href="#icon-rotate-ccw" xlink:href="#icon-rotate-ccw"/></svg></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="10" class="table-empty">لا يوجد طلاب مستقيلون</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

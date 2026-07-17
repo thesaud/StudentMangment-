@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>{{ title }} — نظام إدارة الكتائب والطلاب</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Cairo', 'Segoe UI', sans-serif; direction: rtl; color: #111; background: #fff; padding: 20px 30px; font-size: 12px; }
+  .print-header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1F4E78; padding-bottom: 16px; }
+  .print-header img { height: 60px; margin-bottom: 8px; }
+  .print-header h1 { font-size: 20px; color: #1F4E78; margin-bottom: 4px; }
+  .print-header h2 { font-size: 15px; color: #333; font-weight: 600; }
+  .print-header .date { font-size: 11px; color: #888; margin-top: 6px; }
+  .print-info { display: flex; flex-wrap: wrap; margin-bottom: 18px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+  .print-info .field { flex: 1 1 33%; padding: 8px 12px; border-bottom: 1px solid #eee; border-left: 1px solid #eee; }
+  .print-info .field .k { font-size: 10px; color: #888; font-weight: 600; display: block; margin-bottom: 2px; }
+  .print-info .field .v { font-size: 13px; font-weight: 700; color: #1F4E78; }
+  .print-section-title { font-size: 14px; font-weight: 800; color: #1F4E78; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #C9A227; display: inline-block; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+  th { background: #1F4E78; color: #fff; font-weight: 700; padding: 7px 10px; text-align: right; }
+  td { padding: 6px 10px; text-align: right; border-bottom: 1px solid #eee; }
+  tr:nth-child(even) { background: #f8f9fa; }
+  .text-center { text-align: center; }
+  .text-navy { color: #1F4E78; font-weight: 700; }
+  .empty-msg { text-align: center; color: #999; padding: 16px; font-size: 12px; }
+  .print-footer { text-align: center; margin-top: 24px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 10px; color: #aaa; }
+  .no-print { margin-bottom: 16px; text-align: center; }
+  .no-print button { font-family: 'Cairo', sans-serif; background: #1F4E78; color: #fff; border: none; padding: 10px 28px; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .no-print button:hover { background: #123049; }
+  @media print {
+    .no-print { display: none !important; }
+    body { padding: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <button onclick="window.print()">🖨️ طباعة / حفظ كـ PDF</button>
+</div>
+
+<div class="print-header">
+  <img src="{{ url_for('static', filename='img/public_security_logo.png') }}" alt="شعار الأمن العام">
+  <h1>نظام إدارة الكتائب والطلاب</h1>
+  <h2>{{ title }}</h2>
+  <div class="date">تاريخ الطباعة: {{ now }}</div>
+</div>
+
+{% if info_fields %}
+<div class="print-info">
+  {% for label, value in info_fields %}
+  <div class="field"><span class="k">{{ label }}</span><span class="v">{{ value or '—' }}</span></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% for section in sections %}
+<div class="print-section-title">{{ section.title }}{% if section.rows %} ({{ section.rows | length }}){% endif %}</div>
+<table>
+  <thead><tr>{% for h in section.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    {% for row in section.rows %}
+    <tr>{% for cell in row %}<td>{{ cell if cell is not none and cell != '' else '—' }}</td>{% endfor %}</tr>
+    {% else %}
+    <tr><td colspan="{{ section.headers | length }}" class="empty-msg">{{ section.empty_msg or 'لا توجد بيانات' }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+
+<div class="print-footer">
+  نظام إدارة الكتائب والطلاب — الأمن العام — {{ now }}
+</div>
+
+</body>
+</html>

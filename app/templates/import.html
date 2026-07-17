@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% from "_page_header.html" import page_header %}
+{% block title %}الاستيراد والتوزيع التلقائي{% endblock %}
+{% block body %}
+<div class="page-shell">
+  {{ page_header('الاستيراد والتوزيع التلقائي') }}
+
+  <div class="stepper">
+    <div class="step {{ 'is-done' if preview else 'is-active' }}">
+      <span class="step-num">{{ '✓' if preview else '1' }}</span>
+      <span class="step-label">رفع الملف</span>
+    </div>
+    <div class="step-sep"></div>
+    <div class="step {{ 'is-active' if preview else '' }}">
+      <span class="step-num">2</span>
+      <span class="step-label">مراجعة البيانات والأعمدة</span>
+    </div>
+    <div class="step-sep"></div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <span class="step-label">تأكيد التوزيع</span>
+    </div>
+  </div>
+
+  <div class="page-body-scroll" style="padding:20px;">
+    {% if not preview %}
+    <div class="callout callout-info" style="margin-bottom:18px;">
+      <svg><use href="#icon-info" xlink:href="#icon-info"/></svg>
+      <div>
+        <div class="heading">الوضع الحالي للهيكل التنظيمي</div>
+        <div class="body">
+          لديك حالياً <strong>{{ snapshot.total_battalions }}</strong> كتيبة، <strong>{{ snapshot.total_companies }}</strong> سرية،
+          <strong>{{ snapshot.total_platoons }}</strong> فصيل، و<strong>{{ snapshot.total_students }}</strong> طالب نشط.
+          تنفيذ التوزيع التلقائي سيستبدل هذا الهيكل بالكامل بهيكل جديد.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-navy">
+        <span class="title">الخطوة 1: رفع الملف وتحديد شكل الهيكل</span>
+        <span class="sub">صيغ مدعومة: xlsx, xls, xlsm</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('imports.import_analyze') }}" enctype="multipart/form-data" id="uploadForm">
+          <label class="file-drop" id="fileDrop">
+            <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg>
+            <div class="file-drop-label">اسحب ملف Excel هنا أو اضغط للاختيار</div>
+            <div class="file-drop-hint">سيحاول النظام اكتشاف عمودي «اسم الطالب» و«رقم الهوية» تلقائياً من عناوين الجدول</div>
+            <input type="file" name="excel_file" id="excelFileInput" accept=".xlsx,.xls,.xlsm" required style="display:none;">
+            <div class="file-drop-filename" id="fileDropFilename" style="display:none;"></div>
+          </label>
+
+          <div class="divider"></div>
+
+          <div class="card-section-title">شكل الهيكل التنظيمي الجديد</div>
+          <div class="form-grid cols-2" style="max-width:640px;">
+            <div class="field">
+              <label class="field-label">عدد الكتائب</label>
+              <input type="number" name="battalion_count" id="battalionCountInput" class="field-input" min="1" required placeholder="مثال: 3" value="1">
+            </div>
+            <div class="field">
+              <label class="field-label">عدد السرايا في كل كتيبة</label>
+              <input type="number" id="companiesCountInput" class="field-input" min="1" required placeholder="مثال: 3" value="3">
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div class="field-label" style="margin-bottom:8px;">عدد الفصائل في كل سرية <span class="field-hint">(يمكن أن يختلف من سرية لأخرى)</span></div>
+            <div class="form-grid cols-4" id="platoonCountsGrid" style="max-width:820px;"></div>
+          </div>
+
+          <p class="field-hint" style="margin:14px 0 18px;">
+            سيُوزَّع الطلاب بالتساوي (Round-robin) على كل الفصائل الناتجة، وسيُعيَّن لكل طالب
+            رقم تسلسلي فريد يبدأ من 1 بترتيب وروده في الملف.
+          </p>
+
+          <button type="submit" class="btn btn-navy"><svg><use href="#icon-upload-cloud" xlink:href="#icon-upload-cloud"/></svg> تحليل الملف</button>
+        </form>
+      </div>
+    </div>
+
+    {% else %}
+
+    <div class="flex-row" style="justify-content:space-between; margin-bottom:14px;">
+      <span class="badge {{ 'badge-green' if preview.detection_mode == 'auto' else ('badge-red' if preview.detection_mode == 'fallback_fixed_positions' else 'badge-navy') }}">
+        {% if preview.detection_mode == 'auto' %}تم اكتشاف الأعمدة تلقائياً
+        {% elif preview.detection_mode == 'fallback_fixed_positions' %}تعذّر الاكتشاف التلقائي — استُخدم ترتيب افتراضي
+        {% else %}تعيين أعمدة يدوي{% endif %}
+      </span>
+      <a class="btn btn-outline btn-sm" href="{{ url_for('imports.import_page') }}"><svg><use href="#icon-refresh" xlink:href="#icon-refresh"/></svg> رفع ملف آخر من جديد</a>
+    </div>
+
+    {% if preview.warnings %}
+    <div class="callout callout-warning" style="margin-bottom:16px;">
+      <svg><use href="#icon-alert-triangle" xlink:href="#icon-alert-triangle"/></svg>
+      <div>
+        <div class="heading">تنبيهات على البيانات المستوردة</div>
+        <ul>{% for w in preview.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="POST" id="previewForm">
+      <input type="hidden" name="token" value="{{ preview.token }}">
+      <input type="hidden" name="header_row" value="{{ preview.header_row or '' }}">
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header-navy">
+          <span class="title">الخطوة 2: تأكيد أعمدة البيانات</span>
+          <span class="sub">الورقة: «{{ preview.sheet_name }}»</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid cols-4">
+            <div class="field">
+              <label class="field-label">عمود اسم الطالب</label>
+              <select name="name_col" class="field-select" required>
+                {% for opt in preview.column_options %}
+                  <option value="{{ opt.index }}" {{ 'selected' if preview.mapping.get('name') == opt.index else '' }}>{{ opt.letter }} — {{ opt.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">عمود رقم الهوية</label>
+              <select name="national_id_col" class="field-select">
+                <option value="">— لا يوجد —</option>
+                {% for opt in preview.column_options %}
+                  <option value="{{ opt.index }}" {{ 'selected' if preview.mapping.get('national_id') == opt.index else '' }}>{{ opt.letter }} — {{ opt.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">عمود رقم الجوال</label>
+              <select name="phone_col" class="field-select">
+                <option value="">— لا يوجد —</option>
+                {% for opt in preview.column_options %}
+                  <option value="{{ opt.index }}" {{ 'selected' if preview.mapping.get('phone') == opt.index else '' }}>{{ opt.letter }} — {{ opt.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">عمود الملاحظات</label>
+              <select name="notes_col" class="field-select">
+                <option value="">— لا يوجد —</option>
+                {% for opt in preview.column_options %}
+                  <option value="{{ opt.index }}" {{ 'selected' if preview.mapping.get('notes') == opt.index else '' }}>{{ opt.letter }} — {{ opt.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="stat-grid" style="margin-top:18px;">
+            <div class="stat-card" style="border-top-color:#059669;">
+              <div class="value" style="color:#059669; font-size:24px;">{{ preview.stats.imported_count }}</div>
+              <div class="label">صفوف مستوردة بنجاح</div>
+            </div>
+            <div class="stat-card" style="border-top-color:#9ca3af;">
+              <div class="value" style="color:#6b7280; font-size:24px;">{{ preview.stats.skipped_missing_name }}</div>
+              <div class="label">صفوف تم تجاهلها (بلا اسم)</div>
+            </div>
+            <div class="stat-card" style="border-top-color:var(--red);">
+              <div class="value" style="color:var(--red); font-size:24px;">{{ preview.stats.duplicate_national_ids | length }}</div>
+              <div class="label">هويات مكررة داخل الملف</div>
+            </div>
+            <div class="stat-card" style="border-top-color:var(--gold);">
+              <div class="value" style="color:#92620a; font-size:24px;">{{ preview.stats.existing_in_db_count }}</div>
+              <div class="label">مطابقة لطلاب موجودين حالياً</div>
+            </div>
+          </div>
+
+          <div class="card-section-title" style="margin-top:20px;">معاينة أول 10 صفوف</div>
+          <div class="table-wrap">
+            <table class="data-table thead-light">
+              <thead><tr><th>#</th><th>اسم الطالب</th><th>رقم الهوية</th><th>رقم الجوال</th><th>ملاحظات</th><th>تنبيهات</th></tr></thead>
+              <tbody>
+                {% for r in preview.sample_rows %}
+                <tr>
+                  <td class="col-index">{{ loop.index }}</td>
+                  <td style="font-weight:600;">{{ r.name }}</td>
+                  <td class="col-mono">{{ r.national_id or '—' }}</td>
+                  <td class="col-mono">{{ r.phone or '—' }}</td>
+                  <td class="col-muted">{{ r.notes or '—' }}</td>
+                  <td>
+                    {% for w in r.warnings %}
+                      <span class="badge badge-red" style="margin-left:4px;">
+                        {{ {'short_name': 'اسم قصير', 'invalid_national_id_format': 'رقم هوية غير رقمي', 'exists_in_db': 'مكرر مع النظام'}.get(w, w) }}
+                      </span>
+                    {% endfor %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="table-empty">لا توجد صفوف صالحة للمعاينة</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if preview.stats.imported_count > 10 %}
+            <p class="field-hint" style="margin-top:8px;">... و{{ preview.stats.imported_count - 10 }} طالباً إضافياً سيُستوردون أيضاً.</p>
+          {% endif %}
+
+          <div style="margin-top:16px;">
+            <button type="submit" formaction="{{ url_for('imports.import_remap') }}" class="btn btn-outline">
+              <svg><use href="#icon-refresh" xlink:href="#icon-refresh"/></svg> إعادة المعاينة بهذا التعيين
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header-light"><span class="title">شكل الهيكل التنظيمي الجديد</span></div>
+        <div class="card-body">
+          <div class="form-grid cols-2" style="max-width:640px;">
+            <div class="field">
+              <label class="field-label">عدد الكتائب</label>
+              <input type="number" name="battalion_count" id="battalionCountInput" class="field-input" min="1" required value="{{ preview.battalion_count or 1 }}">
+            </div>
+            <div class="field">
+              <label class="field-label">عدد السرايا في كل كتيبة</label>
+              <input type="number" id="companiesCountInput" class="field-input" min="1" required value="{{ preview.platoon_counts | length or 3 }}">
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div class="field-label" style="margin-bottom:8px;">عدد الفصائل في كل سرية <span class="field-hint">(يمكن أن يختلف من سرية لأخرى)</span></div>
+            <div class="form-grid cols-4" id="platoonCountsGrid" style="max-width:820px;"
+                 data-initial-counts="{{ preview.platoon_counts | join(',') }}"></div>
+          </div>
+
+          <div class="field" style="margin-top:14px;">
+            <label class="field-label">إجمالي الفصائل الناتجة</label>
+            <div style="font-size:20px; font-weight:800; color:var(--navy);" id="totalPlatoonsPreview">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-light"><span class="title">الخطوة 3: تأكيد التوزيع</span></div>
+        <div class="card-body">
+          <div class="callout callout-danger" style="margin-bottom:14px;">
+            <svg><use href="#icon-alert-triangle" xlink:href="#icon-alert-triangle"/></svg>
+            <div>
+              <div class="heading">تحذير: سيتم استبدال الهيكل الحالي بالكامل</div>
+              <div class="body">
+                سيُحذف نهائياً الهيكل الحالي (<strong>{{ snapshot.total_battalions }}</strong> كتيبة، <strong>{{ snapshot.total_companies }}</strong> سرية,
+                <strong>{{ snapshot.total_platoons }}</strong> فصيل، <strong>{{ snapshot.total_students }}</strong> طالب) بكل ما فيه من مخالفات وسجلات طوابير،
+                ليحل محله الهيكل الجديد والطلاب المستوردون. هذا الإجراء لا يمكن التراجع عنه.
+              </div>
+            </div>
+          </div>
+          <label class="flex-row" style="align-items:flex-start; gap:8px; margin-bottom:16px; cursor:pointer;">
+            <input type="checkbox" id="confirmWipeCheckbox" name="confirm_wipe" style="margin-top:3px;">
+            <span style="font-size:13px; color:var(--text-mid);">أفهم أن هذا الإجراء سيحذف الهيكل التنظيمي الحالي بالكامل ولا يمكن التراجع عنه.</span>
+          </label>
+          <div class="flex-row">
+            <a class="btn btn-outline" href="{{ url_for('imports.import_page') }}">إلغاء</a>
+            <button type="submit" formaction="{{ url_for('imports.import_confirm') }}" class="btn btn-red" id="confirmDistributeBtn" disabled>
+              <svg><use href="#icon-upload-cloud" xlink:href="#icon-upload-cloud"/></svg> تنفيذ التوزيع الآن
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/import.js') }}"></script>
+{% endblock %}

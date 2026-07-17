@@ -1,0 +1,20 @@
+{# =============================================================================
+   _page_header.html — رأس الصفحة الموحّد لكل الشاشات الداخلية، مطابق لتصميم
+   "PageHeader": شعار + اسم النظام يمين، عنوان الصفحة في المنتصف، زر "الرئيسية"
+   يسار. الاستخدام: {% from "_page_header.html" import page_header %}
+   {{ page_header('إدارة الكتائب') }}
+   ============================================================================= #}
+{% from "_shield.html" import shield %}
+{% macro page_header(title) %}
+<div class="page-header">
+  <div class="page-header-brand">
+    {{ shield(36) }}
+    <span class="page-header-brand-text">نظام إدارة الكتائب</span>
+  </div>
+  <h1 class="page-header-title">{{ title }}</h1>
+  <a class="page-header-back" href="{{ url_for('main.index') }}">
+    <svg><use href="#icon-chevron-left" xlink:href="#icon-chevron-left"/></svg>
+    <span>الرئيسية</span>
+  </a>
+</div>
+{% endmacro %}

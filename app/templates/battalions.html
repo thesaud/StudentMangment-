@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% from "_page_header.html" import page_header %}
+{% block title %}إدارة الكتائب{% endblock %}
+{% block body %}
+<div class="page-shell">
+  {{ page_header('إدارة الكتائب') }}
+
+  <div class="battalions-layout" id="battalionsLayout">
+    <div class="battalions-tree-pane">
+      <div class="tree-card">
+        <div class="battalions-tree-header">
+          <span class="title">الهيكل التنظيمي</span>
+          <span class="sub">النطاق المطلوب: {{ STUDENT_COUNT_MIN }}–{{ STUDENT_COUNT_MAX }} طالب</span>
+        </div>
+
+        <div class="tree-body" id="orgTree">
+          {% for b in tree %}
+          <div class="tree-node" data-battalion-wrap="{{ b.row.id }}">
+            <div class="tree-row level-battalion" data-node-type="battalion" data-node-id="{{ b.row.id }}" data-node-label="{{ b.row.name }}">
+              <button type="button" class="tree-toggle" data-tree-toggle="b-{{ b.row.id }}">
+                <svg><use href="#icon-chevron-left" xlink:href="#icon-chevron-left"/></svg>
+              </button>
+              <span class="tree-icon battalion"><svg><use href="#icon-building" xlink:href="#icon-building"/></svg></span>
+              <span class="tree-label">{{ b.row.name }}</span>
+              {% set bstudents = [] %}
+              {% for c in b.companies %}{% for p in c.platoons %}{% set _ = bstudents.append(p.student_count) %}{% endfor %}{% endfor %}
+              {% set btotal = bstudents | sum %}
+              <span class="count-badge {{ 'in-range' if STUDENT_COUNT_MIN <= btotal <= STUDENT_COUNT_MAX else 'out-range' }}">
+                {{ '⚠' if not (STUDENT_COUNT_MIN <= btotal <= STUDENT_COUNT_MAX) }}{{ btotal }}
+              </span>
+              <span class="tree-meta">{{ b.companies | length }} سرية</span>
+            </div>
+
+            <div class="tree-children" id="b-{{ b.row.id }}">
+              {% for c in b.companies %}
+              {% set ctotal = c.platoons | sum(attribute='student_count') %}
+              <div data-company-wrap="{{ c.row.id }}">
+                <div class="tree-row level-company" data-node-type="company" data-node-id="{{ c.row.id }}"
+                     data-battalion-id="{{ b.row.id }}" data-node-label="{{ c.row.name }}">
+                  <button type="button" class="tree-toggle company-level" data-tree-toggle="c-{{ c.row.id }}">
+                    <svg><use href="#icon-chevron-left" xlink:href="#icon-chevron-left"/></svg>
+                  </button>
+                  <span class="tree-icon company"><svg><use href="#icon-users" xlink:href="#icon-users"/></svg></span>
+                  <span class="tree-label">{{ c.row.name }}</span>
+                  <span class="count-badge {{ 'in-range' if STUDENT_COUNT_MIN <= ctotal <= STUDENT_COUNT_MAX else 'out-range' }}">
+                    {{ '⚠' if not (STUDENT_COUNT_MIN <= ctotal <= STUDENT_COUNT_MAX) }}{{ ctotal }}
+                  </span>
+                  <span class="tree-meta">{{ c.platoons | length }} فصيل</span>
+                </div>
+
+                <div class="tree-children" id="c-{{ c.row.id }}">
+                  {% for p in c.platoons %}
+                  <div class="tree-row level-platoon" data-node-type="platoon" data-node-id="{{ p.row.id }}"
+                       data-battalion-id="{{ b.row.id }}" data-company-id="{{ c.row.id }}" data-node-label="{{ p.row.name }}">
+                    <span class="tree-toggle-spacer"></span>
+                    <span class="tree-icon platoon"><svg><use href="#icon-user-check" xlink:href="#icon-user-check"/></svg></span>
+                    <span class="tree-label">{{ p.row.name }}</span>
+                    <span class="count-badge {{ 'in-range' if STUDENT_COUNT_MIN <= p.student_count <= STUDENT_COUNT_MAX else 'out-range' }}">
+                      {{ '⚠' if not (STUDENT_COUNT_MIN <= p.student_count <= STUDENT_COUNT_MAX) }}{{ p.student_count }}
+                    </span>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+
+          {% if not tree %}
+          <div class="table-empty">
+            لا توجد كتائب بعد. ابدأ بإضافة كتيبة جديدة من اللوحة الجانبية،
+            أو استخدم <a href="{{ url_for('imports.import_page') }}" style="color:var(--navy); font-weight:700;">الاستيراد والتوزيع التلقائي</a>.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="action-panel">
+      <div class="action-panel-status" id="selectionStatus">لم يتم تحديد عنصر</div>
+      <div class="action-panel-divider"></div>
+
+      <button type="button" class="btn btn-navy btn-block" data-modal-open="dlgAddBattalion">
+        <svg><use href="#icon-plus" xlink:href="#icon-plus"/></svg> إضافة كتيبة
+      </button>
+      <button type="button" class="btn btn-navy btn-block" id="btnAddCompany" disabled data-modal-open="dlgAddCompany">
+        <svg><use href="#icon-plus" xlink:href="#icon-plus"/></svg> إضافة سرية
+      </button>
+      <button type="button" class="btn btn-navy btn-block" id="btnAddPlatoon" disabled data-modal-open="dlgAddPlatoon">
+        <svg><use href="#icon-plus" xlink:href="#icon-plus"/></svg> إضافة فصيل
+      </button>
+
+      <div class="action-panel-divider"></div>
+
+      <a class="btn btn-blue btn-block" id="btnViewStudents" href="#" style="pointer-events:none; opacity:.6;">
+        <svg><use href="#icon-eye" xlink:href="#icon-eye"/></svg> عرض/إدارة الطلاب
+      </a>
+      <button type="button" class="btn btn-blue btn-block" data-modal-open="dlgAddStudent">
+        <svg><use href="#icon-user-plus" xlink:href="#icon-user-plus"/></svg> إضافة طالب يدويًا
+      </button>
+
+      <div class="action-panel-divider"></div>
+
+      <button type="button" class="btn btn-red btn-block" id="btnDeleteSelected" disabled>
+        <svg><use href="#icon-trash" xlink:href="#icon-trash"/></svg> حذف المحدد
+      </button>
+
+      <div class="action-panel-divider"></div>
+
+      <a class="btn btn-gold btn-block" id="btnExportSelected" href="#" style="pointer-events:none; opacity:.6;">
+        <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير المحدد
+      </a>
+      <a class="btn btn-gold btn-block" href="{{ url_for('exports.export_full') }}">
+        <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير الكل
+      </a>
+
+      <div class="action-panel-divider"></div>
+
+      <a class="btn btn-outline btn-block" href="{{ url_for('battalions.battalions') }}">
+        <svg><use href="#icon-refresh" xlink:href="#icon-refresh"/></svg> تحديث
+      </a>
+    </div>
+  </div>
+</div>
+
+<form id="deleteSelectedForm" method="POST" style="display:none" data-confirm="سيتم حذف هذا العنصر وكل ما بداخله نهائياً. هل تريد المتابعة؟" data-confirm-label="حذف نهائياً"></form>
+
+{# --------------------------------------------------------------------- #}
+{# نوافذ الإضافة (كتيبة / سرية / فصيل) — مطابقة لتصميم SimpleDialog       #}
+{# --------------------------------------------------------------------- #}
+<div class="modal-overlay" id="dlgAddBattalion">
+  <div class="modal-box">
+    <div class="modal-title">إضافة كتيبة جديدة<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('battalions.add_battalion') }}" class="gap-form">
+      <div class="field">
+        <label class="field-label">اسم الكتيبة</label>
+        <input class="field-input" type="text" name="name" placeholder="مثال: الكتيبة الأولى" autofocus required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dlgAddCompany">
+  <div class="modal-box">
+    <div class="modal-title">إضافة سرية جديدة<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('battalions.add_company') }}" class="gap-form">
+      <input type="hidden" name="battalion_id" id="addCompanyBattalionId">
+      <div class="field">
+        <label class="field-label">اسم السرية</label>
+        <input class="field-input" type="text" name="name" placeholder="مثال: السرية الأولى" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dlgAddPlatoon">
+  <div class="modal-box">
+    <div class="modal-title">إضافة فصيل جديد<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('battalions.add_platoon') }}" class="gap-form">
+      <input type="hidden" name="company_id" id="addPlatoonCompanyId">
+      <div class="field">
+        <label class="field-label">اسم الفصيل</label>
+        <input class="field-input" type="text" name="name" placeholder="مثال: الفصيل الأول" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dlgAddStudent">
+  <div class="modal-box w-md">
+    <div class="modal-title">إضافة طالب يدويًا<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('students.add_student') }}" class="gap-form" data-cascade-group>
+      <div class="field">
+        <label class="field-label">الكتيبة</label>
+        <select class="field-select" data-cascade="battalion" id="addStudentBattalion">
+          {% for b in tree %}<option value="{{ b.row.id }}">{{ b.row.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">السرية</label>
+        <select class="field-select" data-cascade="company" id="addStudentCompany">
+          {% if tree %}{% for c in tree[0].companies %}<option value="{{ c.row.id }}">{{ c.row.name }}</option>{% endfor %}{% endif %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">الفصيل</label>
+        <select class="field-select" name="platoon_id" data-cascade="platoon" id="addStudentPlatoon">
+          {% if tree and tree[0].companies %}{% for p in tree[0].companies[0].platoons %}<option value="{{ p.row.id }}">{{ p.row.name }}</option>{% endfor %}{% endif %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">اسم الطالب</label>
+        <input class="field-input" type="text" name="name" placeholder="الاسم الكامل" required>
+      </div>
+      <div class="field">
+        <label class="field-label">رقم الهوية</label>
+        <input class="field-input ltr" type="text" name="national_id" placeholder="رقم الهوية الوطنية">
+      </div>
+      <div class="field">
+        <label class="field-label">رقم الطالب / الجوال</label>
+        <input class="field-input ltr" type="text" name="phone" placeholder="رقم الطالب">
+      </div>
+      <div class="field">
+        <label class="field-label">ملاحظات</label>
+        <textarea class="field-textarea" name="notes" placeholder="ملاحظات اختيارية"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/battalions.js') }}"></script>
+{% endblock %}

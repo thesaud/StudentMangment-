@@ -1,0 +1,903 @@
+/* =============================================================================
+   نظام إدارة الكتائب والطلاب — نظام التصميم
+   مبني ليطابق مرجع التصميم المعتمد (Figma Make) بدقة: تنقّل بنمط "لوحة رئيسية
+   + رأس صفحة كحلي لكل شاشة داخلية" بدل الشريط الجانبي الدائم، مع شجرة هرمية،
+   نوافذ منبثقة، وتخطيطات رئيسي/تفصيلي (master-detail) حيث يقتضي التصميم.
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* الألوان الأساسية — مطابقة لهوية التصميم المعتمد ولون رأس تصدير Excel */
+  --navy: #1F4E78;
+  --navy-dark: #123049;
+  --navy-gradient: linear-gradient(160deg, #1F4E78 0%, #123049 100%);
+  --gold: #C9A227;
+  --gold-text-on: #1F4E78;
+  --red: #B33A3A;
+  --bg: #F4F6F8;
+  --white: #ffffff;
+
+  --navy-tint-06: rgba(31,78,120,0.06);
+  --navy-tint-08: rgba(31,78,120,0.08);
+  --navy-tint-10: rgba(31,78,120,0.10);
+  --navy-tint-12: rgba(31,78,120,0.12);
+  --gold-tint-20: rgba(201,162,39,0.20);
+  --red-tint-08: rgba(179,58,58,0.08);
+  --red-tint-10: rgba(179,58,58,0.10);
+  --green-tint-10: rgba(34,197,94,0.10);
+  --green: #15803d;
+
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --text-dark: #111827;
+  --text-mid: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+
+  --radius-sm: 7px;
+  --radius: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-hover: 0 4px 16px rgba(31,78,120,0.18);
+  --shadow-modal: 0 10px 40px rgba(0,0,0,0.25);
+  --shadow-modal-lg: 0 20px 60px rgba(0,0,0,0.35);
+
+  --font: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+
+  --student-count-min: 60;
+  --student-count-max: 100;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text-dark);
+  direction: rtl;
+}
+
+body { min-height: 100vh; }
+
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--font); }
+ul { margin: 0; padding: 0; list-style: none; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c7ccd4; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #a9b0bb; }
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   1) رأس الصفحة الموحّد (Page Header) — يظهر أعلى كل صفحة داخلية
+   ============================================================================= */
+
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--navy);
+  min-height: 58px;
+  padding: 10px 20px;
+  flex-shrink: 0;
+}
+
+.page-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.page-header-brand-text {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.page-header-title {
+  flex: 1;
+  text-align: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.page-header-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.page-header-back:hover { background: rgba(255,255,255,0.28); }
+.page-header-back svg { width: 16px; height: 16px; }
+
+.page-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.page-body-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* =============================================================================
+   2) الشعار (Shield)
+   ============================================================================= */
+
+.shield-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  object-fit: contain;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  image-rendering: auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+}
+
+/* =============================================================================
+   3) اللوحة الرئيسية (Dashboard) — شاشة انقسام: كحلي + قائمة
+   ============================================================================= */
+
+.dashboard-shell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dashboard-hero {
+  width: 25%;
+  min-width: 240px;
+  background: var(--navy-gradient);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  position: relative;
+  padding: 32px 20px;
+  flex-shrink: 0;
+}
+
+.dashboard-hero-rule {
+  width: 70px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 2px;
+}
+
+.dashboard-hero-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.dashboard-hero-sub {
+  color: rgba(201,162,39,0.9);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.dashboard-hero-version {
+  position: absolute;
+  bottom: 22px;
+  color: rgba(255,255,255,0.35);
+  font-size: 11px;
+}
+
+.dashboard-menu-side {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 56px;
+  overflow-y: auto;
+}
+
+.dashboard-menu-heading {
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--navy);
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 8px;
+  display: inline-block;
+  margin: 0 0 22px;
+}
+
+.menu-list { display: flex; flex-direction: column; gap: 14px; max-width: 680px; }
+
+.menu-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: right;
+  background: #fff;
+  border: 1px solid #dde2ea;
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  cursor: pointer;
+  transition: all .15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.menu-card:hover,
+.menu-card:focus-visible {
+  background: var(--navy);
+  border-color: var(--navy);
+  transform: translateX(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+.menu-card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--navy);
+  margin-left: 16px;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.menu-card-icon svg { width: 26px; height: 26px; }
+.menu-card:hover .menu-card-icon { background: var(--gold-tint-20); color: var(--gold); }
+
+.menu-card-text { flex: 1; text-align: right; min-width: 0; }
+.menu-card-title { display: block; font-weight: 700; font-size: 18px; color: var(--navy); margin-bottom: 4px; }
+.menu-card:hover .menu-card-title { color: #fff; }
+.menu-card-desc { display: block; font-size: 13px; color: var(--text-muted); font-weight: 400; line-height: 1.5; }
+.menu-card:hover .menu-card-desc { color: rgba(255,255,255,0.75); }
+
+.menu-card-badge-new {
+  background: var(--gold);
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.menu-card-arrow {
+  color: var(--text-faint);
+  font-size: 20px;
+  margin-right: 4px;
+  flex-shrink: 0;
+  transition: color .2s;
+}
+.menu-card:hover .menu-card-arrow { color: var(--gold); }
+
+/* =============================================================================
+   4) أزرار عامة
+   ============================================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter .12s, background-color .12s;
+  white-space: nowrap;
+}
+.btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.btn:disabled { background: #e5e7eb !important; color: #9ca3af !important; cursor: not-allowed; opacity: .7; }
+
+.btn-navy { background: var(--navy); color: #fff; }
+.btn-navy:hover:not(:disabled) { background: var(--navy-dark); }
+
+.btn-blue { background: #2563eb; color: #fff; }
+.btn-blue:hover:not(:disabled) { filter: brightness(0.92); }
+
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover:not(:disabled) { filter: brightness(0.92); }
+
+.btn-gold { background: var(--gold); color: var(--gold-text-on); }
+.btn-gold:hover:not(:disabled) { filter: brightness(0.95); }
+
+.btn-outline {
+  background: #fff; color: var(--text-mid);
+  border: 1px solid var(--border-strong);
+}
+.btn-outline:hover:not(:disabled) { background: #f9fafb; }
+
+.btn-ghost-on-navy {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.btn-ghost-on-navy:hover:not(:disabled) { background: rgba(255,255,255,0.28); }
+
+.btn-block { width: 100%; justify-content: flex-start; text-align: right; }
+.btn-sm { padding: 7px 12px; font-size: 12px; }
+.btn-icon { padding: 8px; }
+
+/* =============================================================================
+   5) حقول النماذج
+   ============================================================================= */
+
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.field:last-child { margin-bottom: 0; }
+
+.field-label { font-size: 13px; color: var(--text-mid); font-weight: 600; }
+.field-label .req { color: var(--red); }
+
+.field-input, .field-select, .field-textarea {
+  font-family: var(--font);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  width: 100%;
+  font-size: 14px;
+  outline: none;
+  background: #fafafa;
+  direction: rtl;
+  text-align: right;
+  color: var(--text-dark);
+  transition: border-color .12s, background-color .12s;
+}
+.field-input:focus, .field-select:focus, .field-textarea:focus {
+  border-color: var(--navy);
+  background: #fff;
+}
+.field-input.ltr, .field-select.ltr { direction: ltr; text-align: left; }
+.field-textarea { min-height: 90px; resize: vertical; }
+
+.field-hint { font-size: 11px; color: var(--text-faint); }
+
+.search-input-wrap { position: relative; }
+.search-input-wrap svg {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  right: 12px; width: 16px; height: 16px; color: var(--text-faint); pointer-events: none;
+}
+.search-input-wrap .field-input { padding-right: 36px; background: #fff; }
+
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background-color .15s;
+  background: #fafbfc;
+  width: 100%;
+  box-sizing: border-box;
+}
+.file-drop:hover, .file-drop.dragover { border-color: var(--navy); background: var(--navy-tint-06); }
+.file-drop svg { width: 34px; height: 34px; color: var(--navy); margin-bottom: 4px; }
+.file-drop-label { font-weight: 700; color: var(--navy); font-size: 14px; }
+.file-drop-hint { font-size: 12px; color: var(--text-muted); max-width: 460px; }
+.file-drop-filename {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--navy-tint-06);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =============================================================================
+   6) البطاقات
+   ============================================================================= */
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  min-width: 0;
+}
+
+.card-header-navy {
+  background: var(--navy);
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+.card-header-navy .title { font-weight: 700; font-size: 15px; white-space: normal; }
+.card-header-navy .sub { font-size: 12px; color: rgba(255,255,255,0.65); }
+.card-header-navy .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.card-header-navy .btn-ghost-on-navy,
+.card-header-navy .btn-gold,
+.card-header-navy .btn-red {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.card-header-light {
+  background: #f3f4f6;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  box-sizing: border-box;
+}
+.card-header-light .title { font-weight: 700; font-size: 13px; color: var(--navy); white-space: normal; }
+
+.card-body { padding: 20px; }
+.card-body > *:first-child { margin-top: 0; }
+.card-body > *:last-child { margin-bottom: 0; }
+
+/* شبكة نماذج موحّدة داخل البطاقات: مبنية على flexbox (وليس CSS Grid)
+   لضمان عرض الأعمدة بشكل صحيح حتى في محركات العرض القديمة/المضمّنة */
+.form-grid { display: flex; flex-wrap: wrap; margin: -7px -8px; align-items: flex-end; }
+.form-grid .field { margin: 7px 8px; flex: 1 1 200px; min-width: 160px; }
+.form-grid.cols-2 .field { flex-basis: calc(50% - 16px); }
+.form-grid.cols-3 .field { flex-basis: calc(33.333% - 16px); }
+.form-grid.cols-4 .field { flex-basis: calc(25% - 16px); }
+.form-grid .field { margin-bottom: 7px; }
+
+.card-section-title {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 14px;
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* =============================================================================
+   7) الجداول
+   ============================================================================= */
+
+.table-wrap { overflow: auto; }
+
+table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; direction: rtl; }
+table.data-table th, table.data-table td { padding: 10px 14px; text-align: right; white-space: nowrap; }
+table.data-table td.wrap { white-space: normal; }
+table.data-table th {
+  font-weight: 700; font-family: var(--font);
+}
+
+table.data-table.thead-navy thead tr { background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 1; }
+table.data-table.thead-light thead tr { background: #f8f9fa; border-bottom: 2px solid var(--border); }
+table.data-table.thead-light th { color: var(--text-mid); }
+
+table.data-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+table.data-table tbody tr:nth-child(even) { background: #f8f9fa; }
+table.data-table tbody tr:hover { background: var(--navy-tint-06); }
+table.data-table tbody tr.is-selected { background: var(--navy-tint-12); border-right: 3px solid var(--navy); }
+table.data-table tbody tr.is-selected.danger { background: var(--red-tint-08); border-right-color: var(--red); }
+table.data-table.clickable tbody tr { cursor: pointer; }
+
+table.data-table td.col-index { color: var(--text-faint); text-align: center; width: 42px; }
+table.data-table td.col-mono { direction: ltr; text-align: right; color: var(--text-mid); font-variant-numeric: tabular-nums; }
+table.data-table td.col-muted { color: var(--text-muted); }
+table.data-table td.col-ellipsis { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+
+.table-empty { padding: 32px; text-align: center; color: var(--text-faint); }
+
+/* =============================================================================
+   8) الشارات (Badges)
+   ============================================================================= */
+
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.badge-navy { background: var(--navy-tint-08); color: var(--navy); }
+.badge-red { background: var(--red-tint-10); color: var(--red); }
+.badge-green { background: var(--green-tint-10); color: var(--green); }
+.badge-gray { background: #f3f4f6; color: var(--text-mid); }
+
+.count-badge { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 10px; margin-right: 8px; display: inline-flex; align-items: center; gap: 3px; }
+.count-badge.in-range { background: var(--green-tint-10); color: var(--green); }
+.count-badge.out-range { background: var(--red-tint-10); color: var(--red); }
+
+.count-status-bar {
+  display: flex; align-items: center; gap: 6px; padding: 9px 16px;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 600;
+}
+.count-status-bar.in-range { background: var(--green-tint-10); color: var(--green); }
+.count-status-bar.out-range { background: var(--red-tint-10); color: var(--red); }
+
+/* =============================================================================
+   9) رسائل التنبيه (Flash)
+   ============================================================================= */
+
+.flash-stack { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 8px; width: min(92vw, 480px); }
+.alert {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border-radius: var(--radius); font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-card); background: #fff; border: 1px solid var(--border);
+  animation: alert-in .18s ease-out;
+}
+@keyframes alert-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.alert svg { width: 18px; height: 18px; flex-shrink: 0; }
+.alert-ok { border-color: rgba(34,197,94,0.35); color: #15803d; }
+.alert-ok svg { color: #15803d; }
+.alert-error { border-color: rgba(179,58,58,0.35); color: var(--red); }
+.alert-error svg { color: var(--red); }
+.alert-close { margin-right: auto; background: none; border: none; cursor: pointer; color: inherit; opacity: .6; padding: 2px; }
+.alert-close:hover { opacity: 1; }
+.alert-close svg { width: 14px; height: 14px; }
+
+/* =============================================================================
+   10) النوافذ المنبثقة (Dialogs / Modals)
+   ============================================================================= */
+
+.modal-overlay {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 200;
+  background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.is-open { display: flex; }
+
+.modal-box {
+  background: #fff; border-radius: var(--radius-xl);
+  padding: 24px; width: 400px; max-width: 100%;
+  box-shadow: var(--shadow-modal);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-box.w-sm { width: 360px; }
+.modal-box.w-md { width: 440px; }
+.modal-box.w-lg { width: 480px; }
+
+.modal-title {
+  font-weight: 700; font-size: 16px; color: var(--navy);
+  margin: 0 0 16px; border-bottom: 2px solid var(--gold); padding-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title.danger { color: var(--red); border-bottom-color: var(--red); }
+.modal-title .modal-close-x { background: none; border: none; cursor: pointer; color: var(--text-muted); }
+.modal-title .modal-close-x svg { width: 18px; height: 18px; }
+
+.modal-subtitle { font-size: 13px; color: var(--text-muted); margin: -8px 0 14px; }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-start; }
+
+/* نافذة كبيرة لعرض/إدارة الطلاب (مطابقة لتصميم "StudentsModal") */
+.modal-box.w-xl {
+  width: 900px; max-width: 96vw; max-height: 90vh;
+  padding: 0; display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-xl-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; background: var(--navy); flex-shrink: 0;
+}
+.modal-xl-header h2 { color: #fff; font-weight: 700; font-size: 15px; margin: 0; }
+.modal-xl-header button { background: none; border: none; color: #fff; cursor: pointer; padding: 2px; }
+.modal-xl-header button:hover { color: var(--gold); }
+.modal-xl-header button svg { width: 20px; height: 20px; }
+
+/* =============================================================================
+   11) الشجرة الهرمية (كتيبة ← سرية ← فصيل)
+   ============================================================================= */
+
+.tree-card { background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; }
+
+.tree-body { padding: 8px 0; }
+
+.tree-row {
+  display: flex; align-items: center; cursor: pointer;
+  border-right: 3px solid transparent;
+  gap: 4px;
+}
+.tree-row:hover { background: #fafbfc; }
+.tree-row.level-battalion { padding: 10px 16px; }
+.tree-row.level-company {
+  padding: 9px 16px 9px 36px;
+  background: rgba(31,78,120,0.025);
+  border-bottom: 1px solid rgba(31,78,120,0.06);
+  margin-top: 4px;
+}
+.tree-row.level-platoon { padding: 7px 16px 7px 64px; }
+
+.tree-row.level-battalion.is-selected { background: var(--navy-tint-10); border-right-color: var(--navy); }
+.tree-row.level-company.is-selected { background: var(--navy-tint-08); border-right-color: var(--navy); }
+.tree-row.level-platoon.is-selected { background: var(--navy-tint-06); border-right-color: #4b7aab; }
+
+.tree-toggle { background: none; border: none; cursor: pointer; padding: 2px; margin-left: 4px; color: var(--navy); display: flex; }
+.tree-toggle svg { width: 16px; height: 16px; }
+.tree-toggle.company-level { color: var(--text-muted); }
+.tree-toggle.company-level svg { width: 14px; height: 14px; }
+.tree-toggle-spacer { width: 20px; flex-shrink: 0; }
+
+.tree-icon { margin-left: 8px; flex-shrink: 0; display: flex; }
+.tree-icon svg { width: 16px; height: 16px; }
+.tree-icon.battalion { color: var(--navy); }
+.tree-icon.company { color: #4b7aab; width: 14px; height: 14px; }
+.tree-icon.platoon { color: #6b8aad; }
+
+.tree-label { flex: 1; }
+.tree-row.level-battalion .tree-label { font-weight: 700; color: var(--navy); font-size: 15px; }
+.tree-row.level-company .tree-label { font-weight: 700; color: #1a3d5c; font-size: 14px; }
+.tree-row.level-platoon .tree-label { color: var(--text-mid); font-size: 13px; font-weight: 500; }
+
+.tree-meta { color: var(--text-faint); font-size: 11px; margin-right: 6px; white-space: nowrap; }
+.tree-children.is-collapsed { display: none; }
+
+/* فاصل بصري بين السرايا ضمن نفس الكتيبة لتوضيح الانتماء */
+[data-company-wrap] + [data-company-wrap] { margin-top: 6px; border-top: 1px solid rgba(31,78,120,0.08); padding-top: 2px; }
+
+/* =============================================================================
+   12) تخطيط صفحة الكتائب: شجرة + لوحة أزرار جانبية
+   ============================================================================= */
+
+.battalions-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+.battalions-tree-pane { flex: 1; overflow: auto; padding: 16px; min-width: 0; }
+.battalions-tree-header {
+  background: var(--navy); color: #fff; padding: 10px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.battalions-tree-header .title { font-weight: 700; font-size: 14px; }
+.battalions-tree-header .sub { font-size: 12px; color: rgba(255,255,255,0.65); }
+
+.add-node-form {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 16px; margin-bottom: 14px;
+}
+.add-node-form .heading { font-weight: 700; color: var(--navy); font-size: 14px; margin-bottom: 2px; }
+.add-node-form .desc { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.add-node-form-row { display: flex; gap: 10px; align-items: flex-end; }
+.add-node-form-row .field { flex: 1; margin-bottom: 0; }
+
+.action-panel {
+  width: 256px; flex-shrink: 0; border-right: 1px solid var(--border);
+  padding: 16px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
+  background: #fff;
+}
+.action-panel-status { font-size: 12px; color: var(--text-faint); font-weight: 700; text-align: center; margin-bottom: 2px; }
+.action-panel-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* =============================================================================
+   13) تخطيط رئيسي/تفصيلي (Master / Detail) — الطوابير والاستعلام
+   ============================================================================= */
+
+.master-detail { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+.master-pane {
+  flex-shrink: 0; background: #fff; border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.master-pane.w-280 { width: 280px; }
+.master-pane.w-360 { width: 360px; }
+
+.master-pane-toolbar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+.master-list { flex: 1; overflow-y: auto; padding: 8px; }
+
+.master-list-item {
+  display: block; width: 100%; text-align: right; padding: 10px 12px;
+  border-radius: var(--radius); border: none; cursor: pointer; margin-bottom: 4px;
+  background: transparent; transition: background-color .12s;
+}
+.master-list-item:hover { background: #f3f4f6; }
+.master-list-item.is-active { background: var(--navy); }
+.master-list-item .name { font-weight: 500; font-size: 13px; color: var(--text-dark); margin-bottom: 2px; }
+.master-list-item.is-active .name { font-weight: 700; color: #fff; }
+.master-list-item .meta { font-size: 11px; color: var(--text-faint); }
+.master-list-item.is-active .meta { color: rgba(255,255,255,0.7); }
+
+.detail-pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.detail-toolbar {
+  padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+.detail-toolbar .heading { font-weight: 700; font-size: 15px; color: var(--navy); }
+.detail-toolbar .sub { font-size: 12px; color: var(--text-muted); }
+.detail-bottom-bar {
+  padding: 10px 16px; background: #fff; border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;
+}
+
+.empty-pane {
+  flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+  color: var(--text-faint); padding: 32px;
+}
+.empty-pane .icon { font-size: 40px; margin-bottom: 12px; opacity: .7; }
+.empty-pane .icon svg { width: 44px; height: 44px; }
+.empty-pane .title { font-size: 15px; color: var(--text-muted); margin-bottom: 6px; }
+.empty-pane .sub { font-size: 13px; }
+
+/* =============================================================================
+   14) بطاقات الإحصائيات (Reports)
+   ============================================================================= */
+
+.stat-grid { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.stat-card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 20px 18px; text-align: center; min-width: 120px; flex: 1;
+  box-shadow: var(--shadow-card);
+}
+.stat-card .icon { font-size: 26px; margin-bottom: 8px; }
+.stat-card .value { font-size: 28px; font-weight: 800; line-height: 1; }
+.stat-card .label { font-size: 12px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
+
+/* =============================================================================
+   15) بطاقة الملف الشخصي (الاستعلام)
+   ============================================================================= */
+
+.profile-card-header {
+  padding: 14px 18px; color: #fff; display: flex; align-items: center; justify-content: space-between;
+}
+.profile-card-header .name { font-weight: 800; font-size: 17px; }
+.profile-card-header .resigned-tag {
+  font-size: 11px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px;
+  margin-top: 4px; display: inline-block;
+}
+.profile-avatar {
+  width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+
+.info-grid { padding: 9px 8px; display: flex; flex-wrap: wrap; }
+.info-grid .info-field { flex: 1 1 calc(33.333% - 16px); min-width: 150px; margin: 7px 8px; }
+.info-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.info-field .k { font-size: 11px; color: var(--text-faint); font-weight: 600; }
+.info-field .v { font-size: 13px; color: var(--text-dark); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.info-field .v-row { display: flex; align-items: center; gap: 6px; }
+.info-field button.edit-inline { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px; flex-shrink: 0; }
+.info-field button.edit-inline svg { width: 13px; height: 13px; }
+
+/* =============================================================================
+   16) الشريط العلوي (المصعّد) للصفحات المتمركزة (المخالفات)
+   ============================================================================= */
+
+.centered-page { max-width: 960px; margin: 0 auto; width: 100%; }
+
+/* =============================================================================
+   17) المُنبّه/التذكير — كتلة تحذيرية (استيراد، استبدال هيكل)
+   ============================================================================= */
+
+.callout { border-radius: var(--radius-lg); padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; }
+.callout svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+.callout .heading { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.callout .body { font-size: 12.5px; line-height: 1.7; }
+.callout-info { background: #eef3f8; color: var(--navy); }
+.callout-info svg { color: var(--navy); }
+.callout-danger { background: var(--red-tint-08); color: var(--red); border: 1px solid rgba(179,58,58,0.25); }
+.callout-danger svg { color: var(--red); }
+.callout-warning { background: #fdf6e3; color: #92620a; border: 1px solid rgba(201,162,39,0.35); }
+.callout-warning svg { color: #92620a; }
+.callout ul { margin: 6px 0 0; padding-inline-start: 18px; list-style: disc; }
+.callout li { margin-bottom: 3px; }
+
+/* =============================================================================
+   18) خطوات المعالج (Stepper) — الاستيراد
+   ============================================================================= */
+
+.stepper { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: #fff; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.step { display: flex; align-items: center; gap: 8px; }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; background: #e5e7eb; color: var(--text-faint); flex-shrink: 0;
+}
+.step.is-active .step-num { background: var(--navy); color: #fff; }
+.step.is-done .step-num { background: var(--green); color: #fff; }
+.step-label { font-size: 13px; font-weight: 600; color: var(--text-faint); }
+.step.is-active .step-label { color: var(--navy); }
+.step.is-done .step-label { color: var(--green); }
+.step-sep { width: 28px; height: 1px; background: var(--border); }
+
+/* =============================================================================
+   19) عناصر مساعدة عامة
+   ============================================================================= */
+
+.gap-form { display: flex; flex-direction: column; gap: 12px; }
+.flex-row { display: flex; align-items: center; gap: 8px; }
+.flex-1 { flex: 1; min-width: 0; }
+.text-muted { color: var(--text-muted); }
+.text-faint { color: var(--text-faint); }
+.mt-0 { margin-top: 0 !important; }
+.divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+.combo-wrap { position: relative; }
+.combo-results {
+  border: 1px solid var(--border); border-radius: var(--radius); max-height: 180px; overflow-y: auto;
+  margin-top: 6px; background: #fff;
+}
+.combo-option {
+  display: block; width: 100%; text-align: right; padding: 8px 12px; border: none; cursor: pointer;
+  background: #fff; border-bottom: 1px solid #f0f0f0; font-family: var(--font); font-size: 13px;
+}
+.combo-option:last-child { border-bottom: none; }
+.combo-option:hover, .combo-option.is-active { background: var(--navy-tint-08); }
+.combo-option .sub { color: var(--text-faint); font-size: 11px; }
+
+.grid-2 { display: flex; flex-wrap: wrap; margin: -6px; }
+.grid-2 > * { flex: 1 1 calc(50% - 12px); min-width: 160px; margin: 6px; }
+
+/* =============================================================================
+   20) تجاوب — دون فقدان تجربة سطح المكتب الأساسية
+   ============================================================================= */
+
+@media (max-width: 980px) {
+  .dashboard-shell { flex-direction: column; height: auto; min-height: 100vh; overflow: visible; }
+  .dashboard-hero { width: 100%; padding: 36px 20px; }
+  .dashboard-menu-side { padding: 28px 20px 40px; }
+
+  .battalions-layout { flex-direction: column; overflow: visible; }
+  .action-panel { width: 100%; border-right: none; border-top: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+  .action-panel .btn-block { width: auto; flex: 1 1 45%; }
+
+  .master-detail { flex-direction: column; overflow: visible; }
+  .master-pane.w-280, .master-pane.w-360 { width: 100%; border-left: none; border-bottom: 1px solid var(--border); max-height: 260px; }
+
+  .info-grid .info-field { flex-basis: calc(50% - 16px); }
+}
+
+@media (max-width: 620px) {
+  .page-header-brand-text { display: none; }
+  .page-header-title { font-size: 15px; }
+  .info-grid .info-field { flex-basis: 100%; }
+  .form-grid.cols-2 .field, .form-grid.cols-3 .field, .form-grid.cols-4 .field { flex-basis: 100%; }
+  .modal-box.w-xl { width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
+}
+
+@media print {
+  .page-header, .action-panel, .master-pane, .btn, .detail-bottom-bar { display: none !important; }
+}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% from "_page_header.html" import page_header %}
+{% block title %}{{ scope.label }}{% endblock %}
+{% block body %}
+<div class="page-shell">
+  {{ page_header(scope.label) }}
+
+  <div class="page-body-scroll" style="padding:16px;">
+    <div class="flex-row" style="margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+      <div class="search-input-wrap flex-1" style="min-width:220px;">
+        <svg><use href="#icon-search" xlink:href="#icon-search"/></svg>
+        <input class="field-input" type="text" id="studentsFilter" placeholder="بحث بالاسم أو رقم الهوية أو رقم الطالب...">
+      </div>
+      <a class="btn btn-outline" href="{{ url_for('battalions.battalions') }}">
+        <svg><use href="#icon-arrow-back" xlink:href="#icon-arrow-back"/></svg> رجوع للهيكل
+      </a>
+      <a class="btn btn-gold" href="{{ export_url }}">
+        <svg><use href="#icon-download" xlink:href="#icon-download"/></svg> تصدير Excel
+      </a>
+      <a class="btn btn-outline" href="{{ print_url }}" target="_blank">
+        <svg><use href="#icon-file-excel" xlink:href="#icon-file-excel"/></svg> طباعة PDF
+      </a>
+      <button type="button" class="btn btn-navy" data-modal-open="dlgAddStudent">
+        <svg><use href="#icon-user-plus" xlink:href="#icon-user-plus"/></svg> إضافة طالب
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data-table thead-navy clickable" id="studentsTable">
+          <thead>
+            <tr>
+              <th style="width:42px;">#</th>
+              <th>اسم الطالب</th>
+              <th>رقم الهوية</th>
+              <th>رقم الطالب</th>
+              <th>الكتيبة</th>
+              <th>السرية</th>
+              <th>الفصيل</th>
+              <th>ملاحظات</th>
+              <th style="width:150px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr data-row-search="{{ (s.name or '') ~ ' ' ~ (s.national_id or '') ~ ' ' ~ (s.student_number|string if s.student_number else '') }}">
+              <td class="col-index">{{ loop.index }}</td>
+              <td style="font-weight:600;">{{ s.name }}</td>
+              <td class="col-mono">{{ s.national_id or '—' }}</td>
+              <td class="col-mono" style="font-weight:700; color:var(--navy);">{{ s.student_number or '—' }}</td>
+              <td class="col-muted">{{ s.bname }}</td>
+              <td class="col-muted">{{ s.cname }}</td>
+              <td class="col-muted">{{ s.pname }}</td>
+              <td>
+                <input type="text" class="field-input" style="font-size:12px; padding:5px 8px;"
+                       data-student-notes="{{ s.id }}" value="{{ s.notes or '' }}" placeholder="بلا ملاحظات">
+              </td>
+              <td>
+                <div class="flex-row" style="gap:2px; justify-content:flex-end;">
+                  <button type="button" class="btn btn-outline btn-icon" title="تعديل البيانات" data-modal-open="edit-{{ s.id }}"><svg><use href="#icon-edit" xlink:href="#icon-edit"/></svg></button>
+                  <button type="button" class="btn btn-outline btn-icon" title="نقل لفصيل آخر" data-modal-open="transfer-{{ s.id }}"><svg><use href="#icon-transfer" xlink:href="#icon-transfer"/></svg></button>
+                  <button type="button" class="btn btn-outline btn-icon" title="تسجيل استقالة" data-modal-open="resign-{{ s.id }}"><svg><use href="#icon-log-out" xlink:href="#icon-log-out"/></svg></button>
+                  <form method="POST" action="{{ url_for('students.delete_student', student_id=s.id) }}"
+                        data-confirm="سيتم حذف الطالب «{{ s.name }}» نهائياً مع كل مخالفاته وسجلاته." data-confirm-label="حذف الطالب">
+                    <button type="submit" class="btn btn-outline btn-icon" title="حذف الطالب"><svg><use href="#icon-trash" xlink:href="#icon-trash"/></svg></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="table-empty">لا يوجد طلاب في هذا النطاق بعد.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="count-status-bar {{ 'in-range' if in_range else 'out-range' }}">
+        {% if not in_range %}<svg style="width:15px;height:15px;"><use href="#icon-alert-triangle" xlink:href="#icon-alert-triangle"/></svg>{% endif %}
+        عدد الطلاب: {{ students | length }} — {{ 'ضمن النطاق المطلوب' if in_range else 'خارج النطاق المطلوب' }}
+        ({{ STUDENT_COUNT_MIN }}–{{ STUDENT_COUNT_MAX }})
+      </div>
+    </div>
+  </div>
+</div>
+
+{# --------------------------------------------------------------------- #}
+{# إضافة طالب جديد ضمن هذا النطاق (قوائم متتالية كتيبة ← سرية ← فصيل)      #}
+{# --------------------------------------------------------------------- #}
+{% set ns = namespace(companies=[], platoons=[]) %}
+{% for b in tree %}{% if b.row.id == default_battalion_id %}{% set ns.companies = b.companies %}{% endif %}{% endfor %}
+{% for c in ns.companies %}{% if c.row.id == default_company_id %}{% set ns.platoons = c.platoons %}{% endif %}{% endfor %}
+
+<div class="modal-overlay" id="dlgAddStudent">
+  <div class="modal-box w-md">
+    <div class="modal-title">إضافة طالب يدويًا<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('students.add_student') }}" class="gap-form" data-cascade-group>
+      <div class="field">
+        <label class="field-label">الكتيبة</label>
+        <select class="field-select" data-cascade="battalion">
+          {% for b in tree %}<option value="{{ b.row.id }}" {{ 'selected' if b.row.id == default_battalion_id }}>{{ b.row.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">السرية</label>
+        <select class="field-select" data-cascade="company">
+          {% for c in ns.companies %}<option value="{{ c.row.id }}" {{ 'selected' if c.row.id == default_company_id }}>{{ c.row.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">الفصيل</label>
+        <select class="field-select" name="platoon_id" data-cascade="platoon">
+          {% for p in ns.platoons %}<option value="{{ p.row.id }}" {{ 'selected' if p.row.id == default_platoon_id }}>{{ p.row.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">اسم الطالب</label>
+        <input class="field-input" type="text" name="name" placeholder="الاسم الكامل" required>
+      </div>
+      <div class="field">
+        <label class="field-label">رقم الهوية</label>
+        <input class="field-input ltr" type="text" name="national_id" placeholder="رقم الهوية الوطنية">
+      </div>
+      <div class="field">
+        <label class="field-label">رقم الطالب / الجوال</label>
+        <input class="field-input ltr" type="text" name="phone" placeholder="رقم الطالب">
+      </div>
+      <div class="field">
+        <label class="field-label">ملاحظات</label>
+        <textarea class="field-textarea" name="notes" placeholder="ملاحظات اختيارية"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# --------------------------------------------------------------------- #}
+{# نوافذ لكل طالب: تعديل / نقل / استقالة                                  #}
+{# --------------------------------------------------------------------- #}
+{% for s in students %}
+<div class="modal-overlay" id="edit-{{ s.id }}">
+  <div class="modal-box">
+    <div class="modal-title">تعديل بيانات الطالب<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <form method="POST" action="{{ url_for('students.update_student', student_id=s.id) }}" class="gap-form">
+      <div class="field"><label class="field-label">اسم الطالب</label><input class="field-input" type="text" name="name" value="{{ s.name }}" required></div>
+      <div class="field"><label class="field-label">رقم الهوية</label><input class="field-input ltr" type="text" name="national_id" value="{{ s.national_id or '' }}"></div>
+      <div class="field"><label class="field-label">رقم الطالب</label><input class="field-input ltr" type="text" name="phone" value="{{ s.phone or '' }}"></div>
+      <div class="field"><label class="field-label">ملاحظات</label><textarea class="field-textarea" name="notes">{{ s.notes or '' }}</textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="transfer-{{ s.id }}">
+  <div class="modal-box">
+    <div class="modal-title">نقل طالب<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <p class="modal-subtitle">نقل: {{ s.name }}</p>
+    <form method="POST" action="{{ url_for('students.transfer_student', student_id=s.id) }}" class="gap-form" data-cascade-group>
+      <div class="field">
+        <label class="field-label">الكتيبة الجديدة</label>
+        <select class="field-select" data-cascade="battalion">
+          {% for b in tree %}<option value="{{ b.row.id }}">{{ b.row.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">السرية الجديدة</label>
+        <select class="field-select" data-cascade="company">
+          {% if tree %}{% for c in tree[0].companies %}<option value="{{ c.row.id }}">{{ c.row.name }}</option>{% endfor %}{% endif %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">الفصيل الجديد</label>
+        <select class="field-select" name="new_platoon_id" data-cascade="platoon">
+          {% if tree and tree[0].companies %}{% for p in tree[0].companies[0].platoons %}<option value="{{ p.row.id }}">{{ p.row.name }}</option>{% endfor %}{% endif %}
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-navy">تأكيد النقل</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="resign-{{ s.id }}">
+  <div class="modal-box">
+    <div class="modal-title danger">تسجيل استقالة<button type="button" class="modal-close-x" data-modal-close><svg><use href="#icon-x" xlink:href="#icon-x"/></svg></button></div>
+    <p class="modal-subtitle">{{ s.name }}</p>
+    <form method="POST" action="{{ url_for('students.resign_student', student_id=s.id) }}" class="gap-form">
+      <div class="callout callout-danger">
+        <svg><use href="#icon-alert-triangle" xlink:href="#icon-alert-triangle"/></svg>
+        <div><div class="heading">سيتوقف ظهور الطالب في القوائم النشطة</div>
+        <div class="body">يبقى سجله محفوظاً بالكامل ويظهر ضمن قائمة المستقيلين في التقارير، مع إمكانية التراجع لاحقاً.</div></div>
+      </div>
+      <div class="field"><label class="field-label">سبب الاستقالة</label><textarea class="field-textarea" name="reason" placeholder="اختياري"></textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-modal-close>إلغاء</button>
+        <button type="submit" class="btn btn-red">تسجيل الاستقالة</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/students_view.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,29 @@
+# =============================================================================
+# docker-compose.yml — تشغيل النظام بأمر واحد:
+#
+#   docker compose up -d
+#
+# ثم افتح: http://localhost:5000
+#
+# التخزين الدائم (يبقى سليماً عبر إعادة البناء والتحديثات):
+#   ./storage/data     قاعدة البيانات SQLite
+#   ./storage/uploads  ملفات Excel المرفوعة مؤقتاً أثناء الاستيراد
+#   ./storage/exports  نسخ دائمة من كل ملفات التصدير (بطابع زمني)
+#   ./storage/logs     سجلات التطبيق وخادم gunicorn
+# =============================================================================
+
+services:
+  kataeb:
+    build: .
+    container_name: kataeb_webapp
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # غيّر هذا المفتاح في الإنتاج الفعلي
+      KATAEB_SECRET_KEY: "change-me-in-production"
+    volumes:
+      - ./storage/data:/data
+      - ./storage/uploads:/uploads
+      - ./storage/exports:/exports
+      - ./storage/logs:/logs
